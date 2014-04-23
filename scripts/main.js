@@ -24,7 +24,7 @@ require([
 
     for(var i = 0, l =result._meta.length; i<l; i++){
 
-      if(result._meta[i].name === "MXR"){
+      if(result._meta[i].name === "MxR"){
         found = true;
         playListURI = result._uris[i];
         break;
@@ -32,7 +32,7 @@ require([
     }
 
     if(!found){
-      models.Playlist.create("MXR").done(function(result){
+      models.Playlist.create("MxR").done(function(result){
         playList = result;
         buildList();
       })
@@ -46,7 +46,8 @@ require([
       mouseBase,
       dragingBase;
 
-  addDraging();
+  positionSongs();
+  addDragingSong();
 
   function buildList(){
       list = List.forPlaylist(playList);
@@ -54,33 +55,81 @@ require([
       list.init();
   }
 
-  function startDraging(event){
-    document.addEventListener("mouseup", stopDraging, false);
-    document.addEventListener("mousemove", onDraging, false);
-    document.querySelector('.song').removeEventListener("mousedown", startDraging);
+  function startDragingSong(event){
+    var song = document.querySelectorAll('#mixer .song');
+    for(var i in song){
+      if(i !== "length" && i !== "item"){
+        song[i].removeEventListener("mousedown", startDragingSong, false);
+      }
+    }
+
+    document.addEventListener("mouseup", stopDragingSong, false);
+    document.addEventListener("mousemove", onDragingSong, false);
+    removeDragingSong();
 
     draging = event.target;
+
     mouseBase = {
       x: event.pageX,
       y: event.pageY
-    }
+    };
+
     dragingBase = {
-      x: draging.style.left,
-      y: draging.style.top
+      x: draging.offsetLeft,
+      y: draging.offsetTop
+    };
+  }
+  function checkRearange(element, leftPosition){
+
+  }
+
+  function onDragingSong(event){
+    var song = document.querySelectorAll('#mixer .track'),
+        newLeft;
+
+    for(var i in song){
+      if(i !== "length" && i !== "item"){
+        song[i].addEventListener("mousedown", startDragingSong, false);
+      }
+    }
+
+    newLeft = dragingBase.x + (event.pageX - mouseBase.x) ;
+    newLeft = newLeft > 0 ? newLeft : 0;
+    draging.style.left = newLeft + "px";
+  }
+
+  function stopDragingSong(event){
+    document.removeEventListener("mouseup", stopDragingSong, false);
+    document.removeEventListener("mousemove", onDragingSong, false);
+    addDragingSong();
+  }
+
+  function addDragingSong(){
+    var song = document.querySelectorAll('#mixer .song');
+    for(var i in song){
+      if(i !== "length" && i !== "item"){
+        song[i].addEventListener("mousedown", startDragingSong, false);
+      }
     }
   }
 
-  function onDraging(event){
-    draging.style.left = dragingBase.x + (event.pageX - mouseBase.x) + "px";
+  function removeDragingSong(){
+    var song = document.querySelectorAll('#mixer .song');
+    for(var i in song){
+      if(i !== "length" && i !== "item"){
+        song[i].removeEventListener("mousedown", startDragingSong, false);
+      }
+    }
   }
 
-  function stopDraging(event){
-    document.removeEventListener("mouseup", stopDraging);
-    document.removeEventListener("mousemove", onDraging, false);
-    addDraging();
-  }
-
-  function addDraging(){
-    document.querySelector('.song').addEventListener("mousedown", startDraging, false);
+  function positionSongs(){
+    var width = 0;
+    var song = document.querySelectorAll('#mixer .song');
+    for(var i in song){
+      if(i !== "length" && i !== "item"){
+        song[i].style.left = width + "px";
+        width += song[i].offsetWidth;
+      }
+    }
   }
 });
