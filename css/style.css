@@ -9,12 +9,12 @@ body, html{
 	width:100%;
 	position:relative;
 	overflow-x:scroll;
-	overflow-y:hidden; 
+	overflow-y:visible; 
 }
 
 #mixer .track{
 	width:200%;
-	height:6em;
+	height:5em;
 }
 
 #mixer .track.one{
@@ -32,49 +32,133 @@ body, html{
 #mixer .song{
 	left:0px;
 	top:0px;
-	height:6em;
+	height:4em;
 	width:234px;
 	background:pink;
 	position:absolute;
-	-webkit-transition: all .1s;
-	-moz-transition: all .1s;
-	-ms-transition: all .1s;
-	-o-transition: all .1s;
-	transition: all .1s;
+	overflow: visible;
+	-webkit-transition: left .3s, top .7s;
+	-moz-transition: left .3s, top .7s;
+	-ms-transition: left .3s, top .7s;
+	-o-transition: left .3s, top .7s;
+	transition: left .3s, top .7s;
 }
-#mixer .song:nth-child(0){
-	top:0em;
+
+#mixer .song.selected{
+	outline: 4px solid yellow;
+	z-index: 2;
+	-webkit-transition: left .1s, top .1s;
+	-moz-transition: left .1s, top .1s;
+	-ms-transition: left .1s, top .1s;
+	-o-transition: left .1s, top .1s;
+	transition: left .1s, top .1s;
+}
+
+#mixer .song .before{
+	position: absolute;
+	border-right:2px dotted black;
+	width:40px;
+	height:100%;
+	right:100%;
+	background:rgba(255,255,255,.5);
+}
+
+#mixer .song .after{
+	position: absolute;
+	border-left:2px dotted black;
+	width:40px;
+	height:100%;
+	left:100%;
+	background:rgba(255,255,255,.5);
+}
+
+#mixer .song:nth-child(1){
+	top:.5em;
 }
 #mixer .song:nth-child(2){
-	top:6em;
+	top:5.5em;
 }
 #mixer .song:nth-child(3){
-	top:12em;
+	top:10.5em;
 }
 #mixer .song:nth-child(4){
-	top:6em;
+	top:5.5em;
 }
 #mixer .song:nth-child(5){
-	top:0em;
+	top:.5em;
 }
 #mixer .song:nth-child(6){
-	top:6em;
+	top:5.5em;
 }
 #mixer .song:nth-child(7){
-	top:12em;
+	top:10.5em;
 }
 #mixer .song:nth-child(8){
-	top:6em;
+	top:5.5em;
 }
 #mixer .song:nth-child(9){
-	top:0em;
+	top:.5em;
 }
 #mixer .song:nth-child(10){
-	top:6em;
+	top:5.5em;
 }
 #mixer .song:nth-child(11){
-	top:12em;
+	top:10.5em;
 }
 #mixer .song:nth-child(12){
-	top:6em;
+	top:5.5em;
+}
+
+#cropper{
+	position: relative;
+	padding:0 0 3em 0;
+}
+
+#cropper .song{
+	margin:3em 4em 1.5em;
+	height:3em;
+	background: pink;
+	overflow: visible;
+	position: relative;
+	background-clip:content-box;
+}
+
+
+#cropper .song .intro-trimmer{
+	position: absolute;
+	width:2px;
+	height:150%;
+	top: -25%;
+	left:0;
+	margin-left: -1em;
+	background:black;
+	background-clip:content-box;
+	border: solid rgba(255,0,0,.1);
+	border-width: 0 1em;
+	cursor: e-resize;
+}
+
+#cropper .song .outro-trimmer{
+	position: absolute;
+	width:2px;
+	height:150%;
+	top: -25%;
+	right:0;
+	margin-right: -1em;
+	background:black;
+	background-clip:content-box;
+	border: solid rgba(255,0,0,.1);
+	border-width: 0 1em;
+	cursor: w-resize;
+}
+#cropper input{
+	position: absolute;
+	left:5em;
+	width:6em;
+}
+#cropper input+input{
+	position: absolute;
+	right:5em;
+	left:auto;
+	text-align: right;
 }

@@ -13,17 +13,32 @@
     <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
-    <h1></h1>
-    <a href="spotify:app:tnw2014:mixer">test</a>
     <div id="mixer">
-      <div class="songs"><div class="song"></div><div class="song"></div><div class="song"></div><div class="song"></div><div class="song"></div></div>
+      <div class="songs">
+        <div class="song"><div class="before"></div><div class="after"></div></div>
+        <div class="song"><div class="before"></div><div class="after"></div></div>
+        <div class="song"><div class="before"></div><div class="after"></div></div>
+        <div class="song"><div class="before"></div><div class="after"></div></div>
+        <div class="song"><div class="before"></div><div class="after"></div></div>
+      </div>
       <div class="track one"></div>
       <div class="track two"></div>
       <div class="track three"></div>
     </div>
-    <div id="albumCoverContainer"></div>
-    <div id="buttonContainer"></div>
-    <div id="playlistContainer"></div>
+    <div id="cropper">
+      <div class="song">
+        <div class="intro-trimmer"></div>
+        <div class="outro-trimmer"></div>
+      </div>
+      <input type="text" class="intro-ms"/> 
+      <input type="text" class="outro-ms"/> 
+    </div>
+    <div id="library">
+      <ul></ul>
+    </div>
+    <div id="queue">
+      <ul></ul>
+    </div>
     <script src="scripts/main.js"></script>
   </body>
 </html>
