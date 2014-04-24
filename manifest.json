@@ -32,16 +32,6 @@
   "BundleIdentifier": "tnw2014",
   "BundleType": "Application",
   "BundleVersion": "0.0.1",
-  "DefaultTabs":[
-    {
-      "title":"mixer",
-      "arguments":[]
-    },
-    {
-      "title":"social",
-      "arguments":[]
-    }
-  ],
   "Dependencies": {
     "api": "1.0.0",
     "views": "1.10.0"

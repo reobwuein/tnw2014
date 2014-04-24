@@ -1,3 +1,20 @@
+Array.prototype.move = function (old_index, new_index) {
+    while (old_index < 0) {
+        old_index += this.length;
+    }
+    while (new_index < 0) {
+        new_index += this.length;
+    }
+    if (new_index >= this.length) {
+        var k = new_index - this.length;
+        while ((k--) + 1) {
+            this.push(undefined);
+        }
+    }
+    this.splice(new_index, 0, this.splice(old_index, 1)[0]);
+    return this; // for testing purposes
+};
+
 require([
   '$api/models',
   '$api/library',
@@ -22,6 +39,16 @@ require([
   var Library;
   var LibraryURI;
   var list;
+  var queue = [];
+
+  var draging,
+      mouseBase,
+      dragingBase,
+      fullWidthEqualMiliseconds = 1800000,
+      selectedSong,
+      nowPlayingId,
+      songElements = document.querySelectorAll('#mixer .song');
+
   currentUser.library = library.Library.forCurrentUser();
   
   currentUser.library.playlists.snapshot().done(function(result){
@@ -49,9 +76,47 @@ require([
     }
   })
 
+  function playNext(event){
+    if(queue[nowPlayingId+1]){
+      models.player.playTrack(models.Track.fromURI(queue[nowPlayingId+1].data.uri));
+      models.player.seek(queue[nowPlayingId+1].intro)
+      console.log(queue[nowPlayingId+1].duration - queue[nowPlayingId+1].outro - queue[nowPlayingId+1].intro)
+      setTimeout(playNext, queue[nowPlayingId+1].duration - queue[nowPlayingId+1].outro - queue[nowPlayingId+1].intro);
+      nowPlayingId += 1;
+    }else{
+      models.player.pause();
+    }
+  }
+
+  function startPlayingQueue(event){
+    nowPlayingId = -1;
+    playNext()
+  }
+  document.querySelector('.play').addEventListener("click", startPlayingQueue, false);
 
   function addToQueue(event){
-    console.log(event);
+    models.Track.fromURI(event.target.dataset.track).load('name').done(function(track) {
+      var newTrack = {
+          "name": track.name,
+          "duration": track.duration,
+          "intro": 0,
+          "outro": 0,
+          "data": track
+      }
+      queue.push(newTrack);
+
+      addTrackToTimeLine(newTrack);
+      songElements = document.querySelectorAll('#mixer .song');
+      positionSongs();
+      addDragingSong();
+    });
+  }
+
+  function updateQueue(from, to){
+    console.log(from, to)
+    console.log("pre",queue);
+    queue.move(from, to);
+    console.log("post",queue);
   }
 
   function buildLibrary(){
@@ -66,25 +131,27 @@ require([
 
         for(var i = 0, l =result._meta.length; i<l; i++){        
 
-          library.innerHTML += "<li><a href='"+result._uris[i]+"' onclick='addToQueue' >add to queue</a>"+result._meta[i].name+"<span>"+result._meta[i].artists[0].name+"</span></li>"
-           
+          var li = document.createElement('li');
+          var addLink = document.createElement('a');
+          var artistsForTrack = document.createElement('span');
+          var artists = false;
+          addLink.setAttribute("data-track",result._uris[i]);
+          addLink.setAttribute("href",'#');
+          addLink.innerHTML = result._meta[i].name;
+          for(var ii in result._meta[i].artists){
+            artistsForTrack.innerHTML += ii > 0 ? ", " + result._meta[i].artists[ii].name : result._meta[i].artists[ii].name;
+          }
+          addLink.addEventListener("click", addToQueue, false);
+          
+          //addLink.appendChild(artistsForTrack);
+          li.appendChild(addLink);
+          library.appendChild(li);           
         }
       })
     });
   }
 
 /* Timeline */
-
-  var draging,
-      mouseBase,
-      dragingBase,
-      fullWidthEqualMiliseconds = 1800000,
-      songElements = document.querySelectorAll('#mixer .song');
-
-  scaleSong(songElements[1], 240000, 60000, 60000);
-  positionSongs();
-  addDragingSong();
-
 
   function startDragingSong(event){
     for(var i in songElements){
@@ -98,7 +165,7 @@ require([
     removeDragingSong();
 
     draging = event.target;
-    draging.className = "song selected";
+    selectSong(draging);
 
     mouseBase = {
       x: event.pageX,
@@ -110,6 +177,95 @@ require([
       y: draging.offsetTop
     };
   }
+
+  function selectSong(song){
+    var cropper = document.querySelector('#cropper');
+    cropper.className = "";
+    song.className = "song selected";
+    var evt = document.createEvent("HTMLEvents");
+    evt.initEvent("change", false, true);
+    for(var i in songElements){
+      if(song === songElements[i]){
+        selectedSong = queue[i];
+
+        document.querySelector('h2').innerHTML = queue[i].name ;
+
+        var introField = cropper.querySelector('.intro-ms');
+        introField.addEventListener("change", textFieldUpdateScrubber, false);
+        introField.value = queue[i].intro;
+        introField.dispatchEvent(evt);
+
+        var outroField = cropper.querySelector('.outro-ms');
+        outroField.addEventListener("change", textFieldUpdateScrubber, false);
+        outroField.value = queue[i].outro;
+        outroField.dispatchEvent(evt);
+
+        var introScrubber = cropper.querySelector('.intro-trimmer');
+        introScrubber.addEventListener("mouseDown", startScrubbing, false);
+        var outroScrubber = cropper.querySelector('.outro-trimmer');
+        outroScrubber.addEventListener("mouseDown", startScrubbing, false);
+      }
+    }
+  };
+
+  function startScrubbing(event){
+    document.addEventListener("mouseup", stopScrubbing, false);
+    document.addEventListener("mousemove", onScrubbing, false);
+
+    removeDragingScrubber();
+
+    draging = event.target;
+
+    mouseBase = {
+      x: event.pageX,
+      y: event.pageY
+    };
+
+    dragingBase = {
+      x: draging.offsetLeft,
+      y: draging.offsetTop
+    };
+
+  }
+
+  function onScrubbing(event){
+    var newLeft = dragingBase.x + ((event.pageX - mouseBase.x));
+    draging.style.marginLeft = ((newLeft - dragingBase.x) / 3 ) + "px";
+  }
+
+  function removeDragingScrubber(){
+
+  };
+
+  function stopScrubbing(){
+
+  };
+
+  function textFieldUpdateScrubber(event){
+    var cropper = document.querySelector('#cropper');
+    if(event.target.className == 'intro-ms'){
+      selectedSong.intro = event.target.value;
+      cropper.querySelector('.intro-trimmer').style.left = selectedSong.intro / selectedSong.duration * 100 + "%"
+    }else{
+      selectedSong.outro = event.target.value;
+      cropper.querySelector('.outro-trimmer').style.right = selectedSong.outro / selectedSong.duration * 100 + "%"
+    }
+    scaleSong(document.querySelector(".song.selected"), selectedSong.duration, selectedSong.intro, selectedSong.outro);
+    positionSongs();
+  };
+
+  function scrubberUpdateTextField(event){
+    var cropper = document.querySelector('#cropper');
+    if(event.target.className == 'intro-trimmer'){
+      selectedSong.intro = cropper.querySelector('intro-ms').style.left / 100 *  selectedSong.duration;
+      cropper.querySelector('intro-ms').value = selectedSong.intro;
+    }else{
+      selectedSong.outro = cropper.querySelector('outro-ms').style.right / 100 *  selectedSong.duration;
+      cropper.querySelector('outro-ms').value = selectedSong.outro;
+    }
+    scaleSong(document.querySelector(".song.selected"), selectedSong.duration, selectedSong.intro, selectedSong.outro);
+    positionSongs();
+  };
 
   function checkRearange(element, leftPosition){
     var found = false,
@@ -156,13 +312,19 @@ require([
     };
     if(up){
       var after = Math.max(moveTo);
-      if(after == songElements.length){
+      if(after == songElements.length-1){
         parent.appendChild(element);
+        updateQueue(foundAt, songElements.length-1);
+        console.log("forward last")
       }else{
         parent.insertBefore(element, songElements[after+1]);
+        console.log("forward");
+        updateQueue(foundAt, after);
       }
     }else{
-      parent.insertBefore(element, songElements[Math.min(moveTo)])
+      parent.insertBefore(element, songElements[Math.min(moveTo)]);
+        console.log("backward");
+      updateQueue(foundAt, Math.min(moveTo));
     };
   };
 
@@ -172,6 +334,7 @@ require([
     if(checkRearange(draging, newLeft)){
 
       rearange(draging, newLeft);
+
       songElements = document.querySelectorAll('#mixer .song');
       mouseBase = {
         x: event.pageX,
@@ -216,7 +379,7 @@ require([
   }
 
   function positionSongs(){
-    var width = 0;
+    var width = 20;
 
     for(var i in songElements){
       if(i !== "length" && i !== "item"){
@@ -227,11 +390,30 @@ require([
   }
 
   function scaleSong(element, songLengthMiliseconds, introCropMiliseconds, outroCropMiliseconds){
-
+    console.log((songLengthMiliseconds / fullWidthEqualMiliseconds) / (( songLengthMiliseconds - introCropMiliseconds - outroCropMiliseconds ) / fullWidthEqualMiliseconds));
     element.style.width = ( songLengthMiliseconds - introCropMiliseconds - outroCropMiliseconds ) / fullWidthEqualMiliseconds * 100 + "%";
-    element.querySelector('.before').style.width = introCropMiliseconds / songLengthMiliseconds * 100 + "%";
-    element.querySelector('.after').style.width = outroCropMiliseconds / songLengthMiliseconds * 100 + "%";
+    element.querySelector('.before').style.width = (introCropMiliseconds / songLengthMiliseconds) * ((songLengthMiliseconds / fullWidthEqualMiliseconds) / (( songLengthMiliseconds - introCropMiliseconds - outroCropMiliseconds ) / fullWidthEqualMiliseconds)) * 100 + "%";
+    element.querySelector('.after').style.width = outroCropMiliseconds / songLengthMiliseconds  * ((songLengthMiliseconds / fullWidthEqualMiliseconds) / (( songLengthMiliseconds - introCropMiliseconds - outroCropMiliseconds ) / fullWidthEqualMiliseconds)) * 100 + "%";
   } 
 
+  function placeQueueInTimeLine(){
+    parent = document.querySelector('#mixer .songs');
+    parent.innerHTML = "";
+    for(var i in queue){
+      var song = document.createElement('song');
+      song.setAttribute("class", "song");
+      song.innerHTML = '<div class="before"></div><div class="after"></div>';
+      parent.appendChild(song);
+      scaleSong(song, queue[i].duration, queue[i].intro, queue[i].outro);
+    }
+  }
 
+  function addTrackToTimeLine(item){
+    parent = document.querySelector('#mixer .songs');
+    var song = document.createElement('song');
+    song.setAttribute("class", "song");
+    song.innerHTML = '<div class="before"></div><div class="after"></div>';
+    parent.appendChild(song);
+    scaleSong(song, item.duration, item.intro, item.outro);
+  }
 });

@@ -13,30 +13,25 @@
     <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
+    <header><img src="sp://tnw2014/images/logo.png"/></header>
     <div id="mixer">
-      <div class="songs">
-        <div class="song"><div class="before"></div><div class="after"></div></div>
-        <div class="song"><div class="before"></div><div class="after"></div></div>
-        <div class="song"><div class="before"></div><div class="after"></div></div>
-        <div class="song"><div class="before"></div><div class="after"></div></div>
-        <div class="song"><div class="before"></div><div class="after"></div></div>
-      </div>
+      <div class="songs"></div>
       <div class="track one"></div>
       <div class="track two"></div>
       <div class="track three"></div>
     </div>
-    <div id="cropper">
+    <a class="play">&#x25B6;</a>
+    <div id="cropper" class="deactive">
       <div class="song">
         <div class="intro-trimmer"></div>
         <div class="outro-trimmer"></div>
       </div>
       <input type="text" class="intro-ms"/> 
       <input type="text" class="outro-ms"/> 
+      <h2 class="track">&nbsp;</h2>
     </div>
+    <h3>Library</h3>
     <div id="library">
-      <ul></ul>
-    </div>
-    <div id="queue">
       <ul></ul>
     </div>
     <script src="scripts/main.js"></script>
